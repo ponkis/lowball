@@ -1,19 +1,3 @@
-"""
-Iron ball chained to the cursor — Windows desktop toy (v2).
-
-Improvements over v1:
-  * True per-pixel alpha via UpdateLayeredWindow (no color-key artifacts; smooth AA).
-  * Multi-node chain: 14 point masses connected by distance constraints
-    (Position-Based Dynamics). Cursor and ball are nodes in the same solver, so
-    cursor drag emerges naturally from the mass ratio.
-  * Procedurally rendered iron ball: per-pixel sphere normals, Phong lighting,
-    fresnel rim, surface micro-noise, anti-aliased edge.
-  * Procedurally rendered chain link with cross-section shading.
-
-Hold LEFT CTRL to free the cursor and show a repositioning crosshair.
-Press CTRL+SHIFT+Q to quit.
-"""
-
 import math
 import os
 import random
@@ -28,22 +12,22 @@ import win32con
 import win32gui
 
 
-# ---------- Tunables ----------
+
 CHAIN_TOTAL_LEN     = 170.0
-NUM_LINKS           = 14            # chain segments (15 nodes incl. cursor + ball)
+NUM_LINKS           = 14            
 LINK_LEN            = CHAIN_TOTAL_LEN / NUM_LINKS
 BALL_RADIUS         = 32
-BALL_MASS           = 12.0
-BALL_SPIN_RESPONSE  = 0.85          # visual roll amount from ball velocity
+BALL_MASS           = 24.0
+BALL_SPIN_RESPONSE  = 0.85          
 LINK_MASS           = 0.22
-CURSOR_MASS_BASE    = 1.0           # cursor mass when ball is at rest
-CURSOR_SPEED_REF    = 5.5           # px/substep; ball at this speed halves cursor mass
-CURSOR_MIN_MASS     = 0.12          # lower bound — keeps things from going singular
-CURSOR_PULL_GAIN    = 0.75          # amplifies real solver tension on the cursor
-CURSOR_PULL_MAX     = 20.0          # max cursor tug per substep in pixels
-BALL_CURSOR_DRAG    = 0.34          # direct momentum transfer when chain is taut
+CURSOR_MASS_BASE    = 1.0           
+CURSOR_SPEED_REF    = 5.5           
+CURSOR_MIN_MASS     = 0.12          
+CURSOR_PULL_GAIN    = 0.75          
+CURSOR_PULL_MAX     = 20.0          
+BALL_CURSOR_DRAG    = 0.34          
 GRAVITY             = 0.85
-AIR_DAMP_PER_SEC    = 0.82          # fraction of velocity that survives 1 second of air
+AIR_DAMP_PER_SEC    = 0.82          
 GROUND_BOUNCE       = 0.1
 GROUND_FRICTION     = 0.94
 WALL_BOUNCE         = 0.55
@@ -51,15 +35,15 @@ CONSTRAINT_ITERS    = 14
 SUBSTEPS            = 2
 FPS                 = 100
 DROP_IMPACT_MIN     = 3.2
-DROP_SOUND_COOLDOWN = 130           # milliseconds
+DROP_SOUND_COOLDOWN = 130           
 CHAIN_SOUND_MIN     = 0.65
-CHAIN_SOUND_COOLDOWN = 75           # milliseconds
+CHAIN_SOUND_COOLDOWN = 75           
 
-# Per-substep damping derived so total per-second damping equals AIR_DAMP_PER_SEC.
+
 AIR_DAMP            = AIR_DAMP_PER_SEC ** (1.0 / (FPS * SUBSTEPS))
 
-# Off-screen frame size — must comfortably contain the chain + ball + crosshair.
-# Chain reaches ~CHAIN_TOTAL_LEN; ball pad = BALL_RADIUS; crosshair pad ~60.
+
+
 FRAME_W             = 384
 FRAME_H             = 384
 
@@ -68,14 +52,14 @@ VK_LCONTROL         = 0xA2
 VK_RCONTROL         = 0xA3
 
 
-# =====================================================================
-# Win32 layered-window plumbing (per-pixel alpha)
-# =====================================================================
+
+
+
 
 user32 = ctypes.windll.user32
 gdi32  = ctypes.windll.gdi32
 
-# LRESULT / LONG_PTR is pointer-sized on x64 — c_ssize_t matches.
+
 LRESULT = ctypes.c_ssize_t
 user32.DefWindowProcW.argtypes = [
     wintypes.HWND, wintypes.UINT, wintypes.WPARAM, wintypes.LPARAM,
@@ -177,14 +161,14 @@ class LayeredOverlay:
         )
         win32gui.ShowWindow(self.hwnd, SW_SHOW)
 
-        # Memory DC + 32-bit DIB section we'll write into each frame.
+        
         self.hdc_screen = user32.GetDC(0)
         self.hdc_mem    = gdi32.CreateCompatibleDC(self.hdc_screen)
 
         bmi = BITMAPINFO()
         bmi.bmiHeader.biSize        = sizeof(BITMAPINFOHEADER)
         bmi.bmiHeader.biWidth       = width
-        bmi.bmiHeader.biHeight      = -height          # top-down
+        bmi.bmiHeader.biHeight      = -height          
         bmi.bmiHeader.biPlanes      = 1
         bmi.bmiHeader.biBitCount    = 32
         bmi.bmiHeader.biCompression = BI_RGB
@@ -213,8 +197,8 @@ class LayeredOverlay:
     def pump(self) -> bool:
         """Drain the message queue. Returns False if WM_QUIT received."""
         msg = wintypes.MSG()
-        while user32.PeekMessageW(byref(msg), 0, 0, 0, 1):  # PM_REMOVE
-            if msg.message == 0x0012:                      # WM_QUIT
+        while user32.PeekMessageW(byref(msg), 0, 0, 0, 1):  
+            if msg.message == 0x0012:                      
                 return False
             user32.TranslateMessage(byref(msg))
             user32.DispatchMessageW(byref(msg))
@@ -228,9 +212,9 @@ class LayeredOverlay:
         win32gui.DestroyWindow(self.hwnd)
 
 
-# =====================================================================
-# Procedural texture rendering
-# =====================================================================
+
+
+
 
 LIGHT_DIR = np.array([-0.45, -0.55, 0.70])
 LIGHT_DIR /= np.linalg.norm(LIGHT_DIR)
@@ -345,8 +329,8 @@ class IronBallRenderer:
         sy, cy = math.sin(-yaw), math.cos(-yaw)
         sp, cp = math.sin(-pitch), math.cos(-pitch)
 
-        # Transform visible world normals back into object space. The light stays
-        # fixed, but scratches/dents move across the sphere as the object rotates.
+        
+        
         x1 = cy * self.nx + sy * self.nz
         z1 = -sy * self.nx + cy * self.nz
         y1 = self.ny
@@ -384,19 +368,19 @@ def bake_chain_link(length: float = 22.0, ring_thickness: float = 3.0,
     dx = xx - cx
     dy = yy - cy
 
-    # Distance to capsule centerline
+    
     dx_c = np.clip(dx, -inner_len, inner_len)
     line_dist = np.sqrt((dx - dx_c) ** 2 + dy ** 2)
 
-    # Distance to ring centerline (signed: + outside, - inside)
+    
     edge = line_dist - ring_radius
     abs_edge = np.abs(edge)
 
-    # Ring cross-section: circle of radius ring_thickness
+    
     rho = np.clip(edge / ring_thickness, -1.0, 1.0)
     nz_local = np.sqrt(np.maximum(0.0, 1.0 - rho * rho))
 
-    # Outward direction in 2D plane (perpendicular to the centerline tangent)
+    
     out_x = (dx - dx_c)
     out_y = dy
     out_n = np.sqrt(out_x ** 2 + out_y ** 2) + 1e-6
@@ -421,7 +405,7 @@ def bake_chain_link(length: float = 22.0, ring_thickness: float = 3.0,
            + spec[..., None] * np.array([210, 215, 230], dtype=np.float32))
     rgb = np.clip(rgb, 0, 255)
 
-    # Anti-aliased alpha: distance from ring surface
+    
     alpha = np.clip(ring_thickness - abs_edge + 0.5, 0.0, 1.0) * 255.0
 
     rgba = np.dstack([rgb, alpha]).astype(np.uint8)
@@ -429,9 +413,9 @@ def bake_chain_link(length: float = 22.0, ring_thickness: float = 3.0,
     return surf
 
 
-# =====================================================================
-# Chain physics (Position-Based Dynamics)
-# =====================================================================
+
+
+
 
 class Node:
     __slots__ = ('x', 'y', 'px', 'py', 'inv_mass')
@@ -450,7 +434,7 @@ def build_chain(cx: int, cy: int):
         x = cx
         y = cy + CHAIN_TOTAL_LEN * t
         if i == 0:
-            mass = float('inf')   # set per-frame; placeholder
+            mass = float('inf')   
         elif i == NUM_LINKS:
             mass = BALL_MASS
         else:
@@ -461,19 +445,19 @@ def build_chain(cx: int, cy: int):
 
 def physics_step(nodes, sys_cx, sys_cy, ctrl_held, screen_w, screen_h):
     """One integration step. Returns cursor x/y, surface impact, and cursor pull."""
-    # Ball speed BEFORE we integrate — used to decide how hard the ball can drag
-    # the cursor. A spinning ball builds momentum and yanks the cursor harder.
+    
+    
     ball = nodes[-1]
     ball_momentum_x = ball.x - ball.px
     ball_momentum_y = ball.y - ball.py
     ball_speed = math.hypot(ball_momentum_x, ball_momentum_y)
 
-    # Cursor (node 0): pinned position to system mouse before solve;
-    # mass behaviour determined by Ctrl state and ball momentum.
+    
+    
     cursor_node = nodes[0]
     cursor_node.x  = sys_cx
     cursor_node.y  = sys_cy
-    cursor_node.px = sys_cx       # external velocity comes from mouse delta
+    cursor_node.px = sys_cx       
     cursor_node.py = sys_cy
     if ctrl_held:
         cursor_node.inv_mass = 0.0
@@ -483,7 +467,7 @@ def physics_step(nodes, sys_cx, sys_cy, ctrl_held, screen_w, screen_h):
             eff_cursor_mass = CURSOR_MIN_MASS
         cursor_node.inv_mass = 1.0 / eff_cursor_mass
 
-    # Verlet integrate everyone except node 0 (cursor is externally driven)
+    
     for n in nodes[1:]:
         vx = (n.x - n.px) * AIR_DAMP
         vy = (n.y - n.py) * AIR_DAMP
@@ -491,7 +475,7 @@ def physics_step(nodes, sys_cx, sys_cy, ctrl_held, screen_w, screen_h):
         n.x += vx
         n.y += vy + GRAVITY
 
-    # Distance constraints
+    
     for _ in range(CONSTRAINT_ITERS):
         for i in range(NUM_LINKS):
             a = nodes[i]
@@ -535,7 +519,7 @@ def physics_step(nodes, sys_cx, sys_cy, ctrl_held, screen_w, screen_h):
         cursor_node.x = sys_cx + pull_x
         cursor_node.y = sys_cy + pull_y
 
-    # Ball (last node) — collide with screen edges
+    
     ball = nodes[-1]
     impact = 0.0
     vx = ball.x - ball.px
@@ -543,7 +527,7 @@ def physics_step(nodes, sys_cx, sys_cy, ctrl_held, screen_w, screen_h):
     if ball.y > screen_h - BALL_RADIUS:
         ball.y = screen_h - BALL_RADIUS
         impact = max(impact, abs(vy))
-        # reflect velocity via verlet (px controls velocity)
+        
         ball.py = ball.y + (ball.y - ball.py) * GROUND_BOUNCE
         ball.px = ball.x - (ball.x - ball.px) * GROUND_FRICTION
     if ball.x < BALL_RADIUS:
@@ -562,9 +546,9 @@ def physics_step(nodes, sys_cx, sys_cy, ctrl_held, screen_w, screen_h):
     return cursor_node.x, cursor_node.y, impact, pull_x, pull_y
 
 
-# =====================================================================
-# Render
-# =====================================================================
+
+
+
 
 def render_scene(canvas: pygame.Surface, nodes, ball_surface, link_tex,
                  ctrl_held: bool, ctrl_overlay_pos, frame_x: int, frame_y: int):
@@ -573,7 +557,7 @@ def render_scene(canvas: pygame.Surface, nodes, ball_surface, link_tex,
     is the freshly-rendered ball for this frame (orientation already baked in)."""
     canvas.fill((0, 0, 0, 0))
 
-    # Chain: rotate the link texture along each segment and blit at midpoint
+    
     for i in range(NUM_LINKS):
         a = nodes[i]
         b = nodes[i + 1]
@@ -584,12 +568,12 @@ def render_scene(canvas: pygame.Surface, nodes, ball_surface, link_tex,
         rect = rotated.get_rect(center=(int(mx), int(my)))
         canvas.blit(rotated, rect)
 
-    # Ball — already shaded with current rotation
+    
     ball = nodes[-1]
     rect = ball_surface.get_rect(center=(int(ball.x - frame_x), int(ball.y - frame_y)))
     canvas.blit(ball_surface, rect)
 
-    # Reposition crosshair when Ctrl held
+    
     if ctrl_held:
         cx = ctrl_overlay_pos[0] - frame_x
         cy = ctrl_overlay_pos[1] - frame_y
@@ -603,31 +587,27 @@ def render_scene(canvas: pygame.Surface, nodes, ball_surface, link_tex,
 
 
 def compute_frame_origin(nodes, ctrl_held: bool, screen_w: int, screen_h: int):
-    """Pick the top-left corner of a FRAME_W x FRAME_H window centered on the scene."""
     cursor = nodes[0]
     ball   = nodes[-1]
     cx = (cursor.x + ball.x) * 0.5
     cy = (cursor.y + ball.y) * 0.5
     fx = int(cx - FRAME_W / 2)
     fy = int(cy - FRAME_H / 2)
-    # Clamp so the frame stays attached to the scene even near screen edges
-    # (negative origin is fine for a layered window — content just clips offscreen).
+    
+    
     return fx, fy
 
 
 def surface_to_bgra_premult(surface: pygame.Surface) -> bytes:
-    """Convert a pygame SRCALPHA surface to BGRA premultiplied bytes for Win32."""
-    # pygame can hand us BGRA directly; premultiply alpha with numpy.
-    arr = pygame.surfarray.pixels3d(surface)            # (w, h, 3) RGB, view
-    alpha = pygame.surfarray.pixels_alpha(surface)      # (w, h),   view
-    # arr is (w, h, 3); we want shape (h, w, 4) BGRA
-    rgb = np.transpose(arr, (1, 0, 2))                  # (h, w, 3)
-    a   = np.transpose(alpha, (1, 0))                   # (h, w)
+    arr = pygame.surfarray.pixels3d(surface)            
+    alpha = pygame.surfarray.pixels_alpha(surface)      
+    
+    rgb = np.transpose(arr, (1, 0, 2))                  
+    a   = np.transpose(alpha, (1, 0))                   
     af  = a.astype(np.uint16)
     pm  = ((rgb.astype(np.uint16) * af[..., None]) // 255).astype(np.uint8)
     bgra = np.dstack([pm[..., 2], pm[..., 1], pm[..., 0], a])
     out = bgra.tobytes()
-    # release surface locks
     del arr, alpha
     return out
 
@@ -704,9 +684,9 @@ class SoundBank:
             self.last_chain_ms = now
 
 
-# =====================================================================
-# Main
-# =====================================================================
+
+
+
 
 def main() -> int:
     user32.SetProcessDPIAware()
@@ -715,9 +695,6 @@ def main() -> int:
 
     pygame.mixer.pre_init(44100, -16, 2, 512)
     pygame.init()
-    # Drawing happens on a small off-screen surface (FRAME_W x FRAME_H).
-    # The layered window is the same size and is repositioned each frame to
-    # follow the chain — only ~0.6 MB pushed per frame instead of fullscreen.
     canvas = pygame.Surface((FRAME_W, FRAME_H), pygame.SRCALPHA)
 
     overlay = LayeredOverlay(FRAME_W, FRAME_H)
@@ -752,7 +729,7 @@ def main() -> int:
             max_impact = max(max_impact, impact)
             sys_cx, sys_cy = post_cx, post_cy
 
-        # If the solver moved the cursor node away from the OS cursor, sync the OS.
+        
         os_cx, os_cy = win32api.GetCursorPos()
         new_cx = max(0, min(screen_w - 1, int(round(post_cx))))
         new_cy = max(0, min(screen_h - 1, int(round(post_cy))))
