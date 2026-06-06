@@ -73,7 +73,7 @@ class LayeredOverlay:
     def __init__(self, width: int, height: int):
         self.w = width
         self.h = height
-        self.class_name = f"LowballOverlayCls{LayeredOverlay._next_id}"
+        self.class_name = f"lowballOverlayCls{LayeredOverlay._next_id}"
         LayeredOverlay._next_id += 1
 
         WNDPROC = ctypes.WINFUNCTYPE(

@@ -1,7 +1,7 @@
 import win32con
 
 # Branding and Metadata
-PROJECT_NAME = "Lowball"
+PROJECT_NAME = "lowball"
 AUTHOR = "ponkis"
 VERSION = "1.0.0"
 

@@ -1,6 +1,6 @@
-# Lowball
+# lowball
 
-**Lowball** is a lightweight, high-performance desktop interactive accessory for Windows that attaches a simulated heavy metal ball and chain directly to your cursor. It runs on a completely transparent, click-through desktop overlay.
+**lowball** is a lightweight, high-performance desktop interactive accessory for Windows that attaches a simulated heavy metal ball and chain directly to your cursor. It runs on a completely transparent, click-through desktop overlay.
 
 Designed and developed by **ponkis**.
 
@@ -26,7 +26,7 @@ Designed and developed by **ponkis**.
 
 ## Installation & Setup
 
-Lowball requires **Python 3.9 or higher** on **Windows**.
+lowball requires **Python 3.9 or higher** on **Windows**.
 
 1. **Clone the repository**:
    ```bash
@@ -45,7 +45,7 @@ Lowball requires **Python 3.9 or higher** on **Windows**.
 
 ---
 
-## Running Lowball
+## Running lowball
 
 To run the program, use the root execution script:
 ```bash

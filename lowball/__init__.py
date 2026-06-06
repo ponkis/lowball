@@ -1,5 +1,5 @@
 """
-Lowball - A physics-based cursor accessory (ball and chain) for Windows.
+lowball - A physics-based cursor accessory (ball and chain) for Windows.
 Made by ponkis.
 """
 
