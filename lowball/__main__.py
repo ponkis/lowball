@@ -1,5 +1,4 @@
-import sys
-from lowball.main import main
+from lowball.engine import main
 
 if __name__ == "__main__":
-    sys.exit(main())
+    raise SystemExit(main())
