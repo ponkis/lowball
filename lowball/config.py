@@ -1,10 +1,5 @@
 import win32con
 
-# Branding and Metadata
-PROJECT_NAME = "lowball"
-AUTHOR = "ponkis"
-VERSION = "1.0.0"
-
 # Simulation / Physics settings
 CHAIN_TOTAL_LEN = 170.0
 NUM_LINKS = 14
@@ -42,7 +37,7 @@ FRAME_W = 384
 FRAME_H = 384
 
 # Key Codes for Exiting
-QUIT_VKS = (win32con.VK_CONTROL, win32con.VK_SHIFT, ord('Q'))
-EXIT_VK = win32con.VK_ESCAPE  # Escape key exits the program
+QUIT_VKS = (win32con.VK_CONTROL, win32con.VK_SHIFT, ord("Q"))
+EXIT_VK = win32con.VK_ESCAPE
 VK_LCONTROL = 0xA2
 VK_RCONTROL = 0xA3
